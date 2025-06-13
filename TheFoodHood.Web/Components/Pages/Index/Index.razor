@@ -1,0 +1,132 @@
+﻿@page "/index"
+@inject IArticuloService ArticuloService
+@inject AuthenticationStateProvider AuthStateProvider
+
+@using TheFoodHood.Web.Data.Dtos
+@using TheFoodHood.Web.Data.Services
+
+<PageTitle>Inicio</PageTitle>
+
+<div class="shared-background">
+    <!-- ENCABEZADO -->
+    <div class="header-menu">
+        <img src="assets/img/logo.png" alt="logo" class="logo-img" />
+        <h1 class="menu-title">Menú</h1>
+        <div class="user-info">
+            <span>@rolUsuario</span>
+        </div>
+    </div>
+
+    <!-- BÚSQUEDA Y FILTRO -->
+    <div class="productos-search">
+        <button class="btn btn-danger btn-sm" @onclick="@(() => FiltrarCategoria("Todos"))">Todo</button>
+        <input type="text" class="form-control" placeholder="Buscar productos..."
+               @bind="searchTerm" @bind:event="oninput" />
+    </div>
+
+    <!-- CATEGORÍAS FIJAS -->
+    <div class="categories-container">
+        @foreach (var categoria in categorias)
+        {
+            <button class="category-button @(categoriaSeleccionada == categoria.Nombre ? "selected" : "")"
+                    @onclick="@(() => FiltrarCategoria(categoria.Nombre))">
+                <img src="@categoria.Imagen" alt="@categoria.Nombre" />
+                <span>@categoria.Nombre</span>
+            </button>
+        }
+    </div>
+
+    <!-- MENSAJE SI NO HAY PRODUCTOS -->
+    @if (productosFiltrados.Count == 0)
+    {
+        <h2 class="ion-text-center">No hay productos disponibles</h2>
+    }
+
+    <!-- LISTA DE PRODUCTOS -->
+    @if (productosFiltrados.Count > 0)
+    {
+        <div class="productos-container">
+            @foreach (var producto in productosFiltrados)
+            {
+                <div class="producto-card">
+                    <img src="@producto.ImagenUrl" alt="@producto.Nombre" class="producto-img" />
+                    <div class="producto-info">
+                        <strong>@producto.Nombre</strong>
+                        <span>@producto.Descripcion</span>
+                    </div>
+                    <div class="producto-footer">
+                        <span class="precio">RD$ @producto.Precio.ToString("N2")</span>
+
+                        @if (rolUsuario == "cliente")
+                        {
+                            <button class="btn-carrito" @onclick="@(() => AgregarAlCarrito(producto))">
+                                <i class="bi bi-cart"></i>
+                            </button>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private record Categoria(string Nombre, string Imagen);
+
+    private string searchTerm = string.Empty;
+    private string categoriaSeleccionada = "Todos";
+    private List<Categoria> categorias = new()
+    {
+        new("Hamburger", "/img/hamburger.png"),
+        new("Hot Dogs", "/img/Hotdog.png"),
+        new("Tacos", "/img/tacos.png"),
+        new("Yaroas", "/img/yaroa.png"),
+        new("Burritos", "/img/Burrito.png"),
+        new("Pizzas", "/img/Pizza.png")
+    };
+
+    private List<ArticulosDtos> productos = new();
+    private List<ArticulosDtos> productosFiltrados = new();
+    private string rolUsuario = "";
+    private int contadorCarrito = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            if (user.IsInRole("administrador"))
+                rolUsuario = "administrador";
+            else if (user.IsInRole("cliente"))
+                rolUsuario = "cliente";
+            else
+                rolUsuario = "invitado";
+        }
+
+        productos = ArticuloService.Consultar();
+        productosFiltrados = productos;
+    }
+
+    private void FiltrarCategoria(string categoria)
+    {
+        categoriaSeleccionada = categoria;
+        filtrarProductos();
+    }
+
+    private void filtrarProductos()
+    {
+        productosFiltrados = productos
+            .Where(p =>
+                (categoriaSeleccionada == "Todos" || p.CategoriaNombre == categoriaSeleccionada) &&
+                (string.IsNullOrWhiteSpace(searchTerm) || p.Nombre.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+            ).ToList();
+    }
+
+    private void AgregarAlCarrito(ArticulosDtos producto)
+    {
+        contadorCarrito++;
+        // Aquí puedes agregar lógica para añadir el producto al carrito real
+    }
+}

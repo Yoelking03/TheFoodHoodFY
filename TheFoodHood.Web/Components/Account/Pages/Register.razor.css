@@ -1,0 +1,135 @@
+﻿body {
+}
+
+
+.logo-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.logo-img1 {
+    width: 300px;
+    height: auto;
+}
+
+
+.login-title {
+    text-align: center;
+    color: white;
+    margin-bottom: 20px;
+    font-size: 40px;
+}
+
+.custom-input {
+    width: 260px;
+    margin: 0 auto 14px auto;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    color: white;
+}
+
+    .custom-input label {
+        margin-bottom: 4px;
+        font-weight: bold;
+        color: white;
+    }
+
+    .custom-input input,
+    .custom-input select {
+        width: 100%;
+        padding: 10px;
+        border-radius: 8px;
+        border: none;
+        background-color: rgba(255, 255, 255, 0.1);
+        color: white;
+        font-size: 15px;
+    }
+
+
+/* Botones */
+
+.btn-danger {
+    width: 180px;
+    height: 38px;
+    background-color: #d32f2f;
+    color: white;
+    font-weight: bold;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    letter-spacing: 1px;
+    margin: 10px auto 0 auto;
+    display: block;
+    transition: background-color 0.3s ease;
+}
+
+    .btn-danger:hover {
+        background-color: #b71c1c;
+        cursor: pointer;
+    }
+
+.btn-outline-secondary {
+    width: 180px;
+    height: 38px;
+    background-color: transparent;
+    color: #cccccc;
+    border: 2px solid #cccccc;
+    font-weight: bold;
+    border-radius: 12px;
+    font-size: 16px;
+    letter-spacing: 1px;
+    margin: 10px auto 0 auto;
+    display: block;
+    transition: all 0.3s ease;
+}
+
+    .btn-outline-secondary:hover {
+        background-color: #333;
+        border-color: #fff;
+        color: white;
+        cursor: pointer;
+    }
+
+.alerta-flotante {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #dc3545;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-weight: bold;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    z-index: 9999;
+    opacity: 0.95;
+    animation: fadeInOut 3s ease-in-out;
+}
+
+.alerta-exito {
+    background-color: #28a745 !important;
+}
+
+@keyframes fadeInOut {
+    0% {
+        opacity: 0;
+        transform: translateX(-50%) translateY(20px);
+    }
+
+    10% {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+
+    90% {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translateX(-50%) translateY(20px);
+    }
+}

@@ -1,0 +1,177 @@
+﻿@page "/agregar-articulos"
+@page "/agregar-articulos/{id:int?}"
+@rendermode InteractiveServer
+
+@using TheFoodHood.Web.Data.Dtos
+@using TheFoodHood.Web.Data.Services
+@using Microsoft.AspNetCore.Components.Forms
+@inject IArticuloService ArticuloService
+@inject IWebHostEnvironment Env
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+
+<PageTitle>Agregar Artículo</PageTitle>
+
+<h2 class="titulo">@(esEdicion ? "Modificar Artículo" : "Agregar Artículo")</h2>
+
+@if (!string.IsNullOrEmpty(mensaje))
+{
+    <div class="alert @(mensaje.Contains("Error") ? "alert-danger" : "alert-success")" id="mensaje-alerta">@mensaje</div>
+}
+
+<form @onsubmit="e => CrearArticuloManual()" class="ajustes-container">
+
+    <!-- Imagen -->
+    <div class="imagen-contenedor">
+        <label for="agregar-input-img" class="cuadro-imagen">
+            @if (!string.IsNullOrEmpty(imagenBase64Preview))
+            {
+                <img src="@imagenBase64Preview" class="preview-img" alt="Imagen del Artículo" />
+            }
+            else
+            {
+                <span class="plus-icon">+</span>
+            }
+            <div>
+                <InputFile id="agregar-input-img" class="d-none" OnChange="CargarImagen" />
+            </div>
+        </label>
+        <span class="texto-imagen">Imagen del Artículo</span>
+    </div>
+
+    <!-- Categoría -->
+    <div class="form-group">
+        <label class="input-label">Categoría</label>
+        <select class="form-control select-control" @bind="nuevoArticulo.CategoriaNombre">
+            <option disabled selected value="">Selecciona una categoría</option>
+            <option value="Hamburger">Hamburger</option>
+            <option value="Hot Dogs">Hot Dogs</option>
+            <option value="Tacos">Tacos</option>
+            <option value="Yaroas">Yaroas</option>
+            <option value="Burritos">Burritos</option>
+            <option value="Pizzas">Pizzas</option>
+        </select>
+    </div>
+
+    <!-- Nombre -->
+    <div class="form-group">
+        <label class="input-label">Nombre</label>
+        <input type="text" class="form-control" placeholder="Nombre del Artículo" @bind="nuevoArticulo.Nombre" />
+    </div>
+
+    <!-- Descripción -->
+    <div class="form-group">
+        <label class="input-label">Descripción</label>
+        <input type="text" class="form-control" placeholder="Descripción del Artículo" @bind="nuevoArticulo.Descripcion" />
+    </div>
+
+    <!-- Precio -->
+    <div class="form-group">
+        <label class="input-label">Precio</label>
+        <input type="number" step="0.01" class="form-control" placeholder="Precio" @bind="nuevoArticulo.Precio" />
+    </div>
+
+    <!-- Botones -->
+    <div class="button-container">
+        <button type="submit" class="btn btn-danger">
+            @(esEdicion ? "Modificar Artículo" : "Guardar Artículo")
+        </button>
+    </div>
+
+    <div class="button-container">
+        <a href="/articulos" class="btn btn-secondary">Volver a Artículos</a>
+    </div>
+
+</form>
+
+
+@code {
+    [Parameter]
+    public int? id { get; set; }
+
+    private bool esEdicion => id.HasValue;
+
+    private ArticulosDtos nuevoArticulo = new();
+    private string mensaje = "";
+    private string? imagenBase64Preview;
+
+    protected override void OnInitialized()
+    {
+        if (id.HasValue)
+        {
+            var articulo = ArticuloService.ConsultarPorId(id.Value);
+            if (articulo != null)
+            {
+                nuevoArticulo = articulo;
+
+                // Mostrar vista previa solo si es una URL válida (no base64)
+                if (!string.IsNullOrEmpty(nuevoArticulo.ImagenUrl) && nuevoArticulo.ImagenUrl.StartsWith("/uploads"))
+                {
+                    imagenBase64Preview = nuevoArticulo.ImagenUrl;
+                }
+            }
+            else
+            {
+                mensaje = "Error: Artículo no encontrado.";
+            }
+        }
+    }
+
+    private async Task CargarImagen(InputFileChangeEventArgs e)
+    {
+        var archivo = e.File;
+
+        if (archivo.Size > 5 * 1024 * 1024)
+        {
+            mensaje = "La imagen es demasiado grande. Máximo 5MB.";
+            return;
+        }
+
+        var nombreArchivo = $"{Guid.NewGuid()}{Path.GetExtension(archivo.Name)}";
+        var rutaFisica = Path.Combine(Env.WebRootPath, "uploads", nombreArchivo);
+
+        Directory.CreateDirectory(Path.GetDirectoryName(rutaFisica)!);
+
+        using var stream = archivo.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024);
+        using var ms = new MemoryStream();
+        await stream.CopyToAsync(ms);
+        await File.WriteAllBytesAsync(rutaFisica, ms.ToArray());
+
+        var base64 = Convert.ToBase64String(ms.ToArray());
+        var tipo = archivo.ContentType;
+        imagenBase64Preview = $"data:{tipo};base64,{base64}";
+
+        nuevoArticulo.ImagenUrl = $"/uploads/{nombreArchivo}";
+    }
+
+    private void CrearArticuloManual()
+    {
+        bool exito;
+
+        if (esEdicion)
+        {
+            exito = ArticuloService.Modificar(nuevoArticulo);
+            mensaje = exito ? "Artículo modificado correctamente" : "Error al modificar el artículo";
+        }
+        else
+        {
+            exito = ArticuloService.Crear(nuevoArticulo);
+            mensaje = exito ? "Artículo creado correctamente" : "Error al crear el artículo";
+        }
+
+        if (exito && !esEdicion)
+        {
+            nuevoArticulo = new();
+            imagenBase64Preview = null;
+        }
+
+        _ = OcultarMensajeConDelay();
+    }
+
+    private async Task OcultarMensajeConDelay()
+    {
+        await Task.Delay(2000);
+        mensaje = "";
+        StateHasChanged();
+    }
+}

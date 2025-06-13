@@ -1,0 +1,129 @@
+﻿@page "/Account/Register"
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.AspNetCore.Identity
+@using TheFoodHood.Web.Data
+
+@inject UserManager<ApplicationUser> UserManager
+@inject IUserStore<ApplicationUser> UserStore
+@inject SignInManager<ApplicationUser> SignInManager
+@inject RoleManager<IdentityRole> RoleManager
+@inject ILogger<Register> Logger
+@inject NavigationManager NavigationManager
+
+@rendermode InteractiveServer
+<PageTitle>Registrarse</PageTitle>
+
+<div class="logo-container">
+    <img src="img/logo.png" class="logo-img1" alt="Logo" />
+</div>
+
+<h1 class="login-title">Crear Nueva Cuenta</h1>
+
+<EditForm Model="Input" OnValidSubmit="RegisterUser">
+    <DataAnnotationsValidator />
+    <ValidationSummary class="text-danger" />
+
+    <div class="form-container">
+        <div class="custom-input">
+            <label>Tipo de usuario</label>
+            <input type="text" class="form-control" @bind="Input.RolFijo" readonly />
+        </div>
+
+        <div class="custom-input">
+            <label>Nombre</label>
+            <input type="text" class="form-control" @bind="Input.Nombre" />
+            <ValidationMessage For="@(() => Input.Nombre)" />
+        </div>
+
+        <div class="custom-input">
+            <label>Correo</label>
+            <input type="email" class="form-control" @bind="Input.Email" />
+            <ValidationMessage For="@(() => Input.Email)" />
+        </div>
+
+        <div class="custom-input">
+            <label>Contraseña</label>
+            <input type="password" class="form-control" @bind="Input.Password" />
+            <ValidationMessage For="@(() => Input.Password)" />
+        </div>
+
+        <div class="custom-input">
+            <label>Teléfono</label>
+            <input type="tel" class="form-control" @bind="Input.Telefono" />
+            <ValidationMessage For="@(() => Input.Telefono)" />
+        </div>
+
+        <div class="custom-input">
+            <label>Dirección</label>
+            <input type="text" class="form-control" @bind="Input.Direccion" />
+            <ValidationMessage For="@(() => Input.Direccion)" />
+        </div>
+
+        <div class="botones-container">
+            <button class="btn btn-danger" type="submit">Registrarse</button>
+        </div>
+
+        @if (!string.IsNullOrEmpty(MensajeError))
+        {
+            <div class="alert alert-danger mt-2">@MensajeError</div>
+        }
+    </div>
+</EditForm>
+
+@code {
+    private InputModel Input { get; set; } = new();
+    private string MensajeError = string.Empty;
+
+    private async Task RegisterUser()
+    {
+        var user = new ApplicationUser
+        {
+            UserName = Input.Email,
+            Email = Input.Email,
+            Nombre = Input.Nombre,
+            Direccion = Input.Direccion,
+            PhoneNumber = Input.Telefono
+        };
+
+        var result = await UserManager.CreateAsync(user, Input.Password);
+
+        if (result.Succeeded)
+        {
+            Logger.LogInformation("Usuario registrado con éxito.");
+
+            var rol = "Cliente";
+
+            if (!await RoleManager.RoleExistsAsync(rol))
+            {
+                await RoleManager.CreateAsync(new IdentityRole(rol));
+            }
+
+            await UserManager.AddToRoleAsync(user, rol);
+            NavigationManager.NavigateTo("/Account/Login");
+        }
+        else
+        {
+            MensajeError = string.Join("; ", result.Errors.Select(e => e.Description));
+        }
+    }
+
+    private class InputModel
+    {
+        public string RolFijo { get; set; } = "Cliente";
+
+        [Required]
+        public string Nombre { get; set; } = string.Empty;
+
+        [Required, EmailAddress]
+        public string Email { get; set; } = string.Empty;
+
+        [Required, StringLength(100, MinimumLength = 6)]
+        public string Password { get; set; } = string.Empty;
+
+        [Required]
+        public string Telefono { get; set; } = string.Empty;
+
+        [Required]
+        public string Direccion { get; set; } = string.Empty;
+    }
+}

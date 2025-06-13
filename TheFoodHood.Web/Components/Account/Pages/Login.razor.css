@@ -1,0 +1,281 @@
+﻿body {
+}
+
+.logo-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.logo-img1 {
+    width: 300px;
+    height: auto;
+}
+
+.login-title {
+    text-align: center;
+    color: white;
+    margin-bottom: 20px;
+    font-size: 40px;
+}
+
+.custom-input {
+    width: 300px;
+    margin: 0 auto;
+    border-radius: 12px;
+    margin-bottom: 14px;
+    padding: 4px 10px;
+    color: white;
+    font-size: 15px;
+}
+
+    .custom-input label {
+        color: white;
+        font-weight: bold;
+        margin-bottom: 4px;
+        display: block;
+    }
+
+    .custom-input input {
+        width: 100%;
+        padding: 10px;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.08);
+        border: none;
+        color: white;
+    }
+
+        .custom-input input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+/* Contenedor para alinear ambos botones igual que los inputs */
+.botones-container {
+    width: 200px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Botón rojo tipo Danger */
+.btn-danger {
+    background-color: #d32f2f;
+    color: white;
+    font-weight: bold;
+    border: none;
+    border-radius: 12px;
+    height: 45px;
+    font-size: 16px;
+    letter-spacing: 1px;
+    transition: background-color 0.3s ease;
+}
+
+    .btn-danger:hover {
+        background-color: #b71c1c;
+        cursor: pointer;
+    }
+
+/* Botón gris tipo Invitado */
+.btn-outline-secondary {
+    background-color: transparent;
+    color: #cccccc;
+    border: 2px solid #cccccc;
+    font-weight: bold;
+    border-radius: 12px;
+    height: 45px;
+    font-size: 16px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+    .btn-outline-secondary:hover {
+        background-color: #333;
+        border-color: #fff;
+        color: white;
+    }
+
+.link-text {
+    text-align: center;
+    margin-top: 12px;
+    color: white;
+    font-size: 14px;
+}
+
+    .link-text a {
+        color: white;
+        text-decoration: underline;
+    }
+
+.enlace-terminos {
+    text-align: center;
+    margin-top: 10px;
+}
+
+    .enlace-terminos button {
+        background: none;
+        border: none;
+        color: #eb445a;
+        font-size: 14px;
+        text-decoration: underline;
+        cursor: pointer;
+    }
+
+.terminos-texto h2 {
+    font-size: 18px;
+    color: #eb445a;
+    margin-top: 20px;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.terminos-texto p {
+    margin-top: 8px;
+    line-height: 1.6;
+    color: white;
+    margin-bottom: 10px;
+    text-align: justify;
+}
+
+.recordar-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.92rem;
+    margin: 0 auto 10px auto;
+    width: fit-content;
+}
+
+    .recordar-checkbox input[type="checkbox"] {
+        width: 15px;
+        height: 15px;
+        accent-color: #dc3545; /* Rojo para el check si el navegador lo soporta */
+        margin: 0;
+        vertical-align: middle;
+    }
+
+    .recordar-checkbox label {
+        margin: 0;
+        color: #fff;
+        font-size: 0.92rem;
+        cursor: pointer;
+        user-select: none;
+    }
+
+
+
+
+
+/* Fondo oscuro con borde redondeado */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+/* Modal con borde redondeado y sombra */
+.modal-popup {
+    background-color: #fff;
+    border-radius: 12px;
+    width: 95%;
+    max-width: 700px;
+    max-height: 92vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+    border: 1.5px solid #222;
+}
+
+/* Header rojo, texto blanco, fuente grande y negrita */
+.modal-header-custom {
+    background-color: #dc3545;
+    color: #fff;
+    padding: 1.2rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: bold;
+    font-size: 1.5rem;
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+    letter-spacing: 0.5px;
+}
+
+/* Título más grande y centrado */
+.modal-title-custom {
+    font-size: 1.3rem;
+    flex: 1;
+    text-align: left;
+}
+
+/* Botón cerrar a la derecha, blanco y negrita */
+.modal-close-custom {
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 1rem;
+    text-transform: uppercase;
+    cursor: pointer;
+    font-weight: bold;
+    margin-left: 1.5rem;
+    letter-spacing: 0.5px;
+}
+
+/* Cuerpo con padding y fondo blanco */
+.modal-body-custom {
+    padding: 2rem 2rem 1.5rem 2rem;
+    overflow-y: auto;
+    font-size: 1.05rem;
+    color: #111;
+    background: #fff;
+    white-space: pre-wrap;
+}
+
+
+
+/* Animación de entrada */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.checkbox-container {
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 300px; /* el mismo ancho que los inputs */
+    display: flex;
+    align-items: center;
+    margin-top: 12px;
+    color: white;
+}
+
+.checkbox-container {
+    display: flex;
+    align-items: center;
+    margin-top: 12px;
+    color: white;
+    margin-left: 470px;
+    margin-bottom: 20px;
+}
+
+
+
+
+
+

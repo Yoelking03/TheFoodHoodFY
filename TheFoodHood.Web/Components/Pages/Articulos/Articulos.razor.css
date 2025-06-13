@@ -1,0 +1,139 @@
+﻿body {
+}
+/* Controles de productos */
+.productos-controls {
+    padding: 0 16px;
+    display: flex;
+    flex-direction: column;
+    color: white;
+}
+
+.productos-subtitulo {
+    color: #f1a52c;
+    margin-top: 20px;
+    font-size: 25px;
+}
+
+.productos-search {
+    display: flex;
+    align-items: center;
+    margin: 10px 0;
+    position: relative;
+    color: white;
+}
+
+input.form-control::placeholder {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+input.form-control {
+    background-color: transparent;
+    border: 1px solid #ccc;
+    color: white;
+    border-radius: 12px;
+    padding: 8px 12px;
+}
+
+/* Botón Agregar */
+.agregar-nuevo {
+    align-self: flex-end;
+    margin-top: 10px;
+    border-radius: 999px;
+    font-weight: bold;
+    color: white;
+}
+
+/* Línea divisora */
+.divider {
+    height: 2px;
+    background-color: #ccc;
+    border: none;
+    margin: 16px auto;
+    width: 80%;
+}
+
+/* Contenedor de productos */
+.productos-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 16px;
+    padding: 20px 16px 140px;
+    box-sizing: border-box;
+    justify-content: center;
+    color: white;
+}
+
+/* Tarjeta de producto */
+.producto-card {
+    background-color: #eb445a;
+    border-radius: 12px;
+    padding: 12px;
+    color: white;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+    width: 100%;
+    max-width: 400px;
+    margin: auto;
+}
+
+/* Imagen del producto */
+.producto-img-container {
+    position: relative;
+    border-radius: 10px;
+    overflow: hidden;
+    height: 180px;
+}
+
+.producto-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Precio */
+.producto-precio {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background-color: #eb445a;
+    color: white;
+    padding: 4px 10px;
+    font-size: 14px;
+    font-weight: bold;
+    border-radius: 20px;
+}
+
+/* Nombre del producto */
+.producto-nombre {
+    color: #f1a52c;
+    font-size: 16px;
+    font-weight: bold;
+    margin: 8px 0 4px;
+}
+
+/* Descripción */
+.producto-desc {
+    font-size: 13px;
+    margin-bottom: 10px;
+    line-height: 1.4;
+    color: white;
+}
+
+/* Botones */
+.producto-botones {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+}
+
+.btn-white {
+    border: 1px solid white;
+    color: white;
+    background: transparent;
+    font-size: 13px;
+    padding: 4px 12px;
+    height: auto;
+    min-height: 30px;
+    border-radius: 8px;
+}
