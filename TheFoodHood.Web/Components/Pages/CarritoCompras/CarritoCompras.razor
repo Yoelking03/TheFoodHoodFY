@@ -1,5 +1,382 @@
-﻿<h3>CarritoCompras</h3>
+﻿@page "/carritocompras"
+@using TheFoodHood.Web.Data
+@using TheFoodHood.Web.Data.Dtos
+@using TheFoodHood.Web.Data.Entities
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.Components.Authorization
+@using TheFoodHood.Web.Data.Services
+@inject AuthenticationStateProvider AuthStateProvider
+@inject UserManager<ApplicationUser> UserManager
+@inject IArticuloService ArticuloService
+@inject IPedidoService PedidoService
+@inject IDetallePedidoService DetallePedidoService
+@inject IJSRuntime JS
 
-@code {
+@rendermode InteractiveServer
 
+<PageTitle>Carrito de Compras</PageTitle>
+
+<div class="shared-background">
+    <!-- ─── ENCABEZADO ─────────────────────────────────────────────── -->
+    <div class="header-menu">
+        <div class="logo-container">
+            <img src="img/logo.png" alt="logo" class="logo-img" />
+            <span class="logo-text">FoodHood</span>
+        </div>
+
+        <div class="menu-title">Carrito de Compras</div>
+
+        <div class="user-info">
+            @if (IsAuthenticated)
+            {
+                <div class="tipo-usuario">@TipoUsuario</div>
+                <form class="logout-form" action="Account/Logout" method="post">
+                    <AntiforgeryToken />
+                    <input type="hidden" name="ReturnUrl" value="" />
+                    <button type="submit" class="btn-logout">CERRAR SESIÓN</button>
+                </form>
+            }
+            else
+            {
+                <a href="/Account/Login" class="btn-logout">INICIAR SESIÓN</a>
+            }
+        </div>
+    </div>
+       @if (mostrarMensaje)
+    {
+        <div class="mensaje-carrito">
+            @mensajeCarrito
+        </div>
+    }
+
+    <!-- ─── LISTA DEL CARRITO ──────────────────────────────────────── -->
+    @if (Carrito.Count == 0)
+    {
+         
+          <h2 class="pedidos-grid">No hay artículos disponibles</h2>
+      
+          
+    }
+    else
+    {
+        <div class="contenedor-carrito">
+            @foreach (var producto in Carrito)
+            {
+                <div class="item-producto">
+                    <div class="producto-imagen">
+                        <img src="@producto.ImagenUrl" class="producto-img" />
+                    </div>
+                    <div class="producto-info">
+                        <h3 class="producto-nombre">@producto.Nombre</h3>
+                        <p class="precio-unitario">
+                            Precio unitario: RD$ @producto.Precio.ToString("N2")
+                        </p>
+
+                        <div class="controles">
+                            <input type="checkbox"
+                                   checked="@producto.Seleccionado"
+                                   @onchange="e => CambiarSeleccion(producto, (bool)e.Value)" />
+                            <label>Cant.</label>
+
+                            <button @onclick="async () => await DisminuirCantidad(producto)"
+                                    disabled="@(producto.Cantidad == 1)">
+                                -
+                            </button>
+
+                            <span>@producto.Cantidad</span>
+
+                            <button @onclick="async () => await AumentarCantidad(producto)">+</button>
+
+                            <button class="btn btn-outline-danger btn-sm ms-2"
+                                    @onclick="async () => await EliminarProducto(producto)">
+                                🗑️
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- ─── RESUMEN Y CTA ───────────────────────────────────────── -->
+        <div class="resumen-compra">
+            <h2>Total: RD$ @Total.ToString("N2")</h2>
+            <button class="btn-compra"
+                    @onclick="MostrarModalConfirmacion"
+                    disabled="@(!HaySeleccionados())">
+                Realizar compra
+            </button>
+        </div>
+    }
+
+    <!-- ─── MODAL DE ENTREGA ───────────────────────────────────────── -->
+    @if (MostrarModal)
+    {
+        <div class="modal-compra">
+            <h3>¿Cómo deseas recibir tu pedido?</h3>
+
+            <div class="mb-2">
+                <label>
+                    <input type="radio" name="entrega" value="delivery"
+                           checked="@((TipoEntregaSeleccionado == "delivery"))"
+                           @onchange='() => TipoEntregaSeleccionado = "delivery"' />
+                    Delivery
+                </label>
+                <label class="ms-3">
+                    <input type="radio" name="entrega" value="pasar a buscar"
+                           checked="@((TipoEntregaSeleccionado == "pasar a buscar"))"
+                           @onchange='() => TipoEntregaSeleccionado = "pasar a buscar"' />
+                    Pasar a buscar
+                </label>
+            </div>
+
+            @if (TipoEntregaSeleccionado == "delivery")
+            {
+                <h4>¿Dónde quieres recibir el pedido?</h4>
+                <div class="mb-2">
+                    <label>
+                        <input type="radio" name="ubicacion"
+                               checked="@UsarUbicacionActual"
+                               @onchange='() => UsarUbicacionActual = true' />
+                        Ubicación actual
+                    </label>
+                    <label class="ms-3">
+                        <input type="radio" name="ubicacion"
+                               checked="@(!UsarUbicacionActual)"
+                               @onchange='() => UsarUbicacionActual = false' />
+                        Dirección registrada
+                    </label>
+                </div>
+            }
+
+            <button class="btn btn-success mt-2" @onclick="ConfirmarCompra">Confirmar</button>
+            <button class="btn btn-secondary mt-2 ms-2" @onclick="() => MostrarModal = false">Cancelar</button>
+        </div>
+    }
+</div>
+
+@code
+{
+    // ───────────────────────── MODELO DEL ITEM ──────────────────────
+    public class CarritoItem
+    {
+        public int    Id            { get; set; }  // Id del detalle temporal
+        public int    ArticuloId    { get; set; }
+        public string Nombre        { get; set; } = "";
+        public string ImagenUrl     { get; set; } = "";
+        public decimal Precio       { get; set; }
+        public int    Cantidad      { get; set; } = 1;
+        public bool   Seleccionado  { get; set; } = true;
+    }
+
+    // ──────────────────────────── CAMPOS ────────────────────────────
+    private List<CarritoItem> Carrito = new();
+    private decimal Total = 0;
+
+    private string UsuarioId = "";
+    private ApplicationUser? UsuarioActual;
+    private string TipoUsuario = "invitado";
+    private bool IsAuthenticated = false;
+
+    private bool   MostrarModal            = false;
+    private string TipoEntregaSeleccionado = "";
+    private bool   UsarUbicacionActual     = false;
+
+    private string mensajeCarrito = string.Empty;
+    private bool mostrarMensaje = false;
+
+    // ───────────────────────── INICIALIZACIÓN ───────────────────────
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user      = authState.User;
+
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            UsuarioActual   = await UserManager.FindByEmailAsync(user.Identity.Name);
+            UsuarioId       = UsuarioActual?.Id ?? "";
+            TipoUsuario     = UsuarioActual?.TipoUsuario?.ToLower() ?? "invitado";
+            IsAuthenticated = true;
+        }
+
+        CargarCarritoDesdeMemoria();
+               
+     
+    }
+
+    // ───────────────────────── CARGA DEL CARRITO ────────────────────
+    private void CargarCarritoDesdeMemoria()
+    {
+        Carrito.Clear();
+
+        if (!PedidoTemporalStore.PedidosPorUsuario.TryGetValue(UsuarioId, out var pedido))
+            return;
+
+        foreach (var d in pedido.Detalles)
+        {
+            var articulo = ArticuloService.Consultar()
+                                          .FirstOrDefault(a => a.Id == d.ArticuloId);
+            if (articulo is not null)
+            {
+                Carrito.Add(new CarritoItem
+                {
+                    Id           = d.Id,
+                    ArticuloId   = articulo.Id,
+                    Nombre       = articulo.Nombre,
+                    ImagenUrl    = articulo.ImagenUrl,
+                    Precio       = articulo.Precio,
+                    Cantidad     = d.Cantidad,
+                    Seleccionado = true   // siempre arrancan seleccionados
+                });
+            }
+        }
+
+        ActualizarTotales();
+    }
+
+    // ─────────────────────────── CONTROLES ──────────────────────────
+    private async Task AumentarCantidad(CarritoItem item)
+    {
+        if (PedidoTemporalStore.PedidosPorUsuario.TryGetValue(UsuarioId, out var pedido))
+        {
+            var detalle = pedido.Detalles.FirstOrDefault(d => d.ArticuloId == item.ArticuloId);
+            if (detalle is not null) detalle.Cantidad++;
+        }
+
+        CargarCarritoDesdeMemoria();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task DisminuirCantidad(CarritoItem item)
+    {
+        if (item.Cantidad > 1 &&
+            PedidoTemporalStore.PedidosPorUsuario.TryGetValue(UsuarioId, out var pedido))
+        {
+            var detalle = pedido.Detalles.FirstOrDefault(d => d.ArticuloId == item.ArticuloId);
+            if (detalle is not null && detalle.Cantidad > 1) detalle.Cantidad--;
+        }
+
+        CargarCarritoDesdeMemoria();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task EliminarProducto(CarritoItem item)
+    {
+        if (PedidoTemporalStore.PedidosPorUsuario.TryGetValue(UsuarioId, out var pedido))
+        {
+            var detalle = pedido.Detalles.FirstOrDefault(d => d.ArticuloId == item.ArticuloId);
+            if (detalle is not null) pedido.Detalles.Remove(detalle);
+        }
+
+        CargarCarritoDesdeMemoria();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void CambiarSeleccion(CarritoItem item, bool valor)
+    {
+        item.Seleccionado = valor;
+        ActualizarTotales();
+    }
+
+    private void ActualizarTotales()
+    {
+        Total = Carrito.Where(p => p.Seleccionado)
+                       .Sum(p => p.Precio * p.Cantidad);
+    }
+
+    private bool HaySeleccionados() => Carrito.Any(p => p.Seleccionado);
+
+    private void MostrarModalConfirmacion() => MostrarModal = true;
+
+    // ───────────────────────── CONFIRMAR COMPRA ─────────────────────
+    private async Task ConfirmarCompra()
+    {
+        MostrarModal = false;
+
+        if (!PedidoTemporalStore.PedidosPorUsuario.TryGetValue(UsuarioId, out var pedidoTemporal))
+            return;
+
+        // Obtener dirección final
+        string direccionFinal = "";
+        if (TipoEntregaSeleccionado == "delivery")
+        {
+            if (UsarUbicacionActual)
+            {
+                try
+                {
+                    direccionFinal = await JS.InvokeAsync<string>("obtenerUbicacion");
+                }
+                catch
+                {
+                    direccionFinal = "Error obteniendo ubicación actual";
+                }
+            }
+            else
+            {
+                direccionFinal = UsuarioActual?.Direccion ?? "No registrada";
+            }
+        }
+
+        // Ítems seleccionados
+        var seleccionados = Carrito.Where(p => p.Seleccionado).ToList();
+        if (!seleccionados.Any()) return;
+
+        // Crear nuevo pedido definitivo en la BD
+        var pedidoParaGuardar = new PedidosDtos
+        {
+            UsuarioId    = UsuarioId,
+            Estado       = "pendiente",
+            FechaPedido  = DateTime.Now,
+            Total        = seleccionados.Sum(p => p.Precio * p.Cantidad),
+            TipoEntrega  = TipoEntregaSeleccionado,
+            Delivery     = TipoEntregaSeleccionado == "delivery" ? "sí" : "no",
+            Direccion    = direccionFinal
+        };
+
+        if (!PedidoService.Crear(pedidoParaGuardar)) return;
+
+        // Recuperar el pedido recién creado
+        var pedidoGuardado = PedidoService.Consultar()
+                                          .Where(p => p.UsuarioId == UsuarioId)
+                                          .OrderByDescending(p => p.FechaPedido)
+                                          .FirstOrDefault();
+        if (pedidoGuardado is null) return;
+
+        // Detalles del pedido
+        foreach (var item in seleccionados)
+        {
+            var detalle = new DetallePedidosDtos
+            {
+                PedidoId   = pedidoGuardado.Id,
+                ArticuloId = item.ArticuloId,
+                Cantidad   = item.Cantidad
+            };
+            DetallePedidoService.Crear(detalle);
+        }
+
+        // Limpiar solo los seleccionados del temporal
+        pedidoTemporal.Detalles = pedidoTemporal.Detalles
+            .Where(d => !seleccionados.Any(s => s.ArticuloId == d.ArticuloId))
+            .ToList();
+
+        if (pedidoTemporal.Detalles.Any())
+        {
+            PedidoTemporalStore.PedidosPorUsuario[UsuarioId] = pedidoTemporal;
+        }
+        else
+        {
+            // carrito a cero: quita la entrada entera
+            PedidoTemporalStore.PedidosPorUsuario.Remove(UsuarioId);
+        }
+
+        // Refrescar UI y totales
+        CargarCarritoDesdeMemoria();
+        await InvokeAsync(StateHasChanged);
+        mensajeCarrito = "✅ Pedido realizado con éxito. ¡Gracias por tu compra!";
+        mostrarMensaje = true;
+        StateHasChanged();
+
+        await Task.Delay(2000);       // ocultar a los 3 s
+        mostrarMensaje = false;
+        StateHasChanged();
+    }
 }

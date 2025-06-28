@@ -2,15 +2,35 @@
 @page "/agregar-articulos/{id:int?}"
 @rendermode InteractiveServer
 
-@using TheFoodHood.Web.Data.Dtos
-@using TheFoodHood.Web.Data.Services
-@using Microsoft.AspNetCore.Components.Forms
-@inject IArticuloService ArticuloService
-@inject IWebHostEnvironment Env
-@inject NavigationManager Navigation
-@inject IJSRuntime JS
+
 
 <PageTitle>Agregar Artículo</PageTitle>
+<div class="shared-background">
+    <div class="header-menu">
+        <div class="logo-container">
+            <img src="img/logo.png" alt="logo" class="logo-img" />
+            <span class="logo-text">FoodHood</span>
+        </div>
+
+        <div class="menu-title">Artículos</div>
+
+        <div class="user-info">
+            @if (IsAuthenticated)
+            {
+                <div class="tipo-usuario">@TipoUsuario</div>
+                <form class="logout-form" action="Account/Logout" method="post">
+                    <AntiforgeryToken />
+                    <input type="hidden" name="ReturnUrl" value="" />
+                    <button type="submit" class="btn-logout">CERRAR SESIÓN</button>
+                </form>
+            }
+            else
+            {
+                <a href="/Account/Login" class="btn-logout">INICIAR SESIÓN</a>
+            }
+        </div>
+    </div>
+    </div>
 
 <h2 class="titulo">@(esEdicion ? "Modificar Artículo" : "Agregar Artículo")</h2>
 
@@ -94,9 +114,26 @@
     private ArticulosDtos nuevoArticulo = new();
     private string mensaje = "";
     private string? imagenBase64Preview;
+    private string TipoUsuario = "invitado";
+    private string UsuarioId = "0";
+    private bool IsAuthenticated = false;
 
-    protected override void OnInitialized()
+
+    protected override async Task OnInitializedAsync()
     {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        IsAuthenticated = user.Identity?.IsAuthenticated ?? false;
+
+        if (IsAuthenticated)
+        {
+            var email = user.Identity?.Name;
+            var appUser = await UserManager.FindByEmailAsync(email);
+
+            TipoUsuario = appUser?.TipoUsuario?.ToLower() ?? "invitado";
+            UsuarioId = appUser?.Id ?? "0";
+        }
         if (id.HasValue)
         {
             var articulo = ArticuloService.ConsultarPorId(id.Value);

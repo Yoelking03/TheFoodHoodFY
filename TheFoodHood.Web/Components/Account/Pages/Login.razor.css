@@ -8,7 +8,7 @@
 }
 
 .logo-img1 {
-    width: 300px;
+    width: 400px;
     height: auto;
 }
 
@@ -139,29 +139,17 @@
 }
 
 .recordar-checkbox {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.92rem;
-    margin: 0 auto 10px auto;
-    width: fit-content;
+  
+  
+  
+    
+ 
+    margin-left: auto;
+    margin-right: 0;
 }
 
-    .recordar-checkbox input[type="checkbox"] {
-        width: 15px;
-        height: 15px;
-        accent-color: #dc3545; /* Rojo para el check si el navegador lo soporta */
-        margin: 0;
-        vertical-align: middle;
-    }
 
-    .recordar-checkbox label {
-        margin: 0;
-        color: #fff;
-        font-size: 0.92rem;
-        cursor: pointer;
-        user-select: none;
-    }
+ 
 
 
 
@@ -256,23 +244,15 @@
 }
 
 .checkbox-container {
-    margin-left: auto;
+    margin-left: 800px;
     margin-right: auto;
-    max-width: 300px; /* el mismo ancho que los inputs */
-    display: flex;
     align-items: center;
     margin-top: 12px;
     color: white;
+    margin-bottom: 12px;
 }
 
-.checkbox-container {
-    display: flex;
-    align-items: center;
-    margin-top: 12px;
-    color: white;
-    margin-left: 470px;
-    margin-bottom: 20px;
-}
+
 
 
 

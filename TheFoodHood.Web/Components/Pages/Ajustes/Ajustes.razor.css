@@ -1,2 +1,128 @@
-﻿body {
+﻿.form-control:focus {
+    background-color: #2a2a2a !important;
+    border-color: #ffa500 !important;
+    color: #fff !important;
+    box-shadow: 0 0 0 0.2rem rgba(255, 165, 0, 0.25) !important;
+}
+
+.input-group-text {
+    min-width: 45px;
+    justify-content: center;
+}
+
+.btn-success {
+    background-color: #28a745;
+    border-color: #28a745;
+    transition: all 0.3s ease;
+}
+
+    .btn-success:hover {
+        background-color: #218838;
+        border-color: #1e7e34;
+        transform: translateY(-2px);
+    }
+
+.alert {
+    border-radius: 10px;
+    border: none;
+}
+/* Estilos para la página de ajustes de usuario */
+.user-avatar {
+    width: 100px;
+    height: 100px;
+    background-color: #333;
+    border: 3px solid #ffa500;
+}
+
+    .user-avatar i {
+        font-size: 40px;
+        color: #ffa500;
+    }
+
+.page-title {
+    color: #ffa500;
+    margin-bottom: 30px;
+}
+
+.btn-edit {
+    border-radius: 25px;
+    font-weight: bold;
+    background-color: #dc3545;
+    border-color: #dc3545;
+}
+
+.input-group-text-custom {
+    background-color: #333;
+    border-color: #555;
+    color: #fff;
+}
+
+.form-control-custom {
+    background-color: #2a2a2a;
+    border-color: #555;
+    color: #fff;
+}
+
+.btn-action {
+    border-radius: 25px;
+    font-weight: bold;
+}
+
+.contact-info {
+    color: #888;
+    font-size: 14px;
+}
+
+    .contact-info a {
+        color: #ffa500;
+        cursor: pointer;
+    }
+
+        .contact-info a:hover {
+            color: #ff8c00;
+            text-decoration: none;
+        }
+
+/* Estilos para el modal de términos y condiciones */
+.modal-terminos {
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+    .modal-terminos .modal-content {
+        background-color: #2a2a2a;
+        color: #fff;
+        border: 1px solid #555;
+    }
+
+    .modal-terminos .modal-header {
+        border-bottom: 1px solid #555;
+    }
+
+    .modal-terminos .modal-title {
+        color: #ffa500;
+    }
+
+    .modal-terminos .modal-body {
+        max-height: 70vh;
+        overflow-y: auto;
+    }
+
+        .modal-terminos .modal-body p {
+            margin-bottom: 1rem;
+            line-height: 1.6;
+        }
+
+        .modal-terminos .modal-body strong {
+            color: #ffa500;
+        }
+
+    .modal-terminos .modal-footer {
+        border-top: 1px solid #555;
+    }
+
+    .modal-terminos .btn-close-white {
+        filter: invert(1) grayscale(100%) brightness(200%);
+    }
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }

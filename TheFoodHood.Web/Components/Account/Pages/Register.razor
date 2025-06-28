@@ -6,9 +6,10 @@
 @inject UserManager<ApplicationUser> UserManager
 @inject IUserStore<ApplicationUser> UserStore
 @inject SignInManager<ApplicationUser> SignInManager
-@inject RoleManager<IdentityRole> RoleManager
 @inject ILogger<Register> Logger
 @inject NavigationManager NavigationManager
+@inject IdentityRedirectManager RedirectManager
+@inject IJSRuntime JSRuntime
 
 @rendermode InteractiveServer
 <PageTitle>Registrarse</PageTitle>
@@ -24,11 +25,6 @@
     <ValidationSummary class="text-danger" />
 
     <div class="form-container">
-        <div class="custom-input">
-            <label>Tipo de usuario</label>
-            <input type="text" class="form-control" @bind="Input.RolFijo" readonly />
-        </div>
-
         <div class="custom-input">
             <label>Nombre</label>
             <input type="text" class="form-control" @bind="Input.Nombre" />
@@ -62,6 +58,8 @@
         <div class="botones-container">
             <button class="btn btn-danger" type="submit">Registrarse</button>
         </div>
+      
+
 
         @if (!string.IsNullOrEmpty(MensajeError))
         {
@@ -69,12 +67,24 @@
         }
     </div>
 </EditForm>
+<div class="contenedor-regresar">
+    <button type="button" class="btn-regresar" @onclick="RegresarAtras">
+        ⬅️ Regresar
+    </button>
+</div>
 
 @code {
     private InputModel Input { get; set; } = new();
     private string MensajeError = string.Empty;
+    
+    private void RegresarAtras()
+    {
+        Navigation.NavigateTo("/Account/Login");
+    }
 
-    private async Task RegisterUser()
+
+
+    private void RegisterUser()
     {
         var user = new ApplicationUser
         {
@@ -82,23 +92,15 @@
             Email = Input.Email,
             Nombre = Input.Nombre,
             Direccion = Input.Direccion,
-            PhoneNumber = Input.Telefono
+            PhoneNumber = Input.Telefono,
+            TipoUsuario = "Cliente" // Aquí va fijo
         };
 
-        var result = await UserManager.CreateAsync(user, Input.Password);
+        var result = UserManager.CreateAsync(user, Input.Password).Result;
 
         if (result.Succeeded)
         {
             Logger.LogInformation("Usuario registrado con éxito.");
-
-            var rol = "Cliente";
-
-            if (!await RoleManager.RoleExistsAsync(rol))
-            {
-                await RoleManager.CreateAsync(new IdentityRole(rol));
-            }
-
-            await UserManager.AddToRoleAsync(user, rol);
             NavigationManager.NavigateTo("/Account/Login");
         }
         else
@@ -107,10 +109,9 @@
         }
     }
 
+
     private class InputModel
     {
-        public string RolFijo { get; set; } = "Cliente";
-
         [Required]
         public string Nombre { get; set; } = string.Empty;
 
@@ -126,4 +127,5 @@
         [Required]
         public string Direccion { get; set; } = string.Empty;
     }
+
 }

@@ -1,30 +1,62 @@
-﻿@page "/index"
-@inject IArticuloService ArticuloService
-@inject AuthenticationStateProvider AuthStateProvider
-
+﻿@page "/"
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.Components.Authorization
+@using TheFoodHood.Web.Data
 @using TheFoodHood.Web.Data.Dtos
 @using TheFoodHood.Web.Data.Services
+@using TheFoodHood.Web.Data.Entities
+
+@inject IArticuloService ArticuloService
+@inject IDetallePedidoService DetallePedidoService
+@inject AuthenticationStateProvider AuthStateProvider
+@inject UserManager<ApplicationUser> UserManager
+@inject NavigationManager NavigationManager
+
+@rendermode InteractiveServer
 
 <PageTitle>Inicio</PageTitle>
 
 <div class="shared-background">
-    <!-- ENCABEZADO -->
     <div class="header-menu">
-        <img src="assets/img/logo.png" alt="logo" class="logo-img" />
-        <h1 class="menu-title">Menú</h1>
+        <div class="logo-container">
+            <img src="img/logo.png" alt="logo" class="logo-img" />
+            <span class="logo-text">FoodHood</span>
+        </div>
+
+        <div class="menu-title">Menú</div>
+
         <div class="user-info">
-            <span>@rolUsuario</span>
+            @if (IsAuthenticated)
+            {
+                <div class="tipo-usuario">@TipoUsuario</div>
+                <form class="logout-form" action="Account/Logout" method="post">
+                    <AntiforgeryToken />
+                    <input type="hidden" name="ReturnUrl" value="" />
+                    <button type="submit" class="btn-logout">CERRAR SESIÓN</button>
+                </form>
+            }
+            else
+            {
+                <div class="tipo-usuario">Invitado</div>
+                <a href="/Account/Login" class="btn-logout">INICIAR SESIÓN</a>
+            }
         </div>
     </div>
 
-    <!-- BÚSQUEDA Y FILTRO -->
+    @if (mostrarMensaje)
+    {
+        <div class="mensaje-exito-carrito">
+            @mensajeCarrito
+        </div>
+    }
+
     <div class="productos-search">
-        <button class="btn btn-danger btn-sm" @onclick="@(() => FiltrarCategoria("Todos"))">Todo</button>
-        <input type="text" class="form-control" placeholder="Buscar productos..."
-               @bind="searchTerm" @bind:event="oninput" />
+        <button class="btnfiltro" @onclick="@(() => FiltrarCategoria("Todos"))">Todos</button>
+        <input type="text" class="form-control" placeholder="Buscar articulos..."
+               value="@searchTerm"
+               @oninput="OnSearchChanged" />
     </div>
 
-    <!-- CATEGORÍAS FIJAS -->
     <div class="categories-container">
         @foreach (var categoria in categorias)
         {
@@ -36,13 +68,11 @@
         }
     </div>
 
-    <!-- MENSAJE SI NO HAY PRODUCTOS -->
     @if (productosFiltrados.Count == 0)
     {
-        <h2 class="ion-text-center">No hay productos disponibles</h2>
+        <h2 class="ion-text-center">No hay articulos disponibles</h2>
     }
 
-    <!-- LISTA DE PRODUCTOS -->
     @if (productosFiltrados.Count > 0)
     {
         <div class="productos-container">
@@ -57,9 +87,9 @@
                     <div class="producto-footer">
                         <span class="precio">RD$ @producto.Precio.ToString("N2")</span>
 
-                        @if (rolUsuario == "cliente")
+                        @if (TipoUsuario == "cliente")
                         {
-                            <button class="btn-carrito" @onclick="@(() => AgregarAlCarrito(producto))">
+                            <button class="btn-carrito" @onclick="() => AgregarAlPedidoTemporal(producto)">
                                 <i class="bi bi-cart"></i>
                             </button>
                         }
@@ -73,36 +103,42 @@
 @code {
     private record Categoria(string Nombre, string Imagen);
 
-    private string searchTerm = string.Empty;
-    private string categoriaSeleccionada = "Todos";
     private List<Categoria> categorias = new()
     {
-        new("Hamburger", "/img/hamburger.png"),
-        new("Hot Dogs", "/img/Hotdog.png"),
-        new("Tacos", "/img/tacos.png"),
-        new("Yaroas", "/img/yaroa.png"),
-        new("Burritos", "/img/Burrito.png"),
-        new("Pizzas", "/img/Pizza.png")
+        new Categoria("Hamburger", "/img/hamburger.png"),
+        new Categoria("Hot Dogs", "/img/Hotdog.png"),
+        new Categoria("Tacos", "/img/tacos.png"),
+        new Categoria("Yaroas", "/img/yaroa.png"),
+        new Categoria("Burritos", "/img/Burrito.png"),
+        new Categoria("Pizzas", "/img/Pizza.png")
     };
+
+    private string searchTerm = string.Empty;
+    private string categoriaSeleccionada = "Todos";
+    private string TipoUsuario = "invitado";
+    private string UsuarioId = "0";
+    private bool IsAuthenticated = false;
 
     private List<ArticulosDtos> productos = new();
     private List<ArticulosDtos> productosFiltrados = new();
-    private string rolUsuario = "";
-    private int contadorCarrito = 0;
+
+    private string mensajeCarrito = "";
+    private bool mostrarMensaje = false;
 
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthStateProvider.GetAuthenticationStateAsync();
         var user = authState.User;
 
-        if (user.Identity?.IsAuthenticated == true)
+        IsAuthenticated = user.Identity?.IsAuthenticated ?? false;
+
+        if (IsAuthenticated)
         {
-            if (user.IsInRole("administrador"))
-                rolUsuario = "administrador";
-            else if (user.IsInRole("cliente"))
-                rolUsuario = "cliente";
-            else
-                rolUsuario = "invitado";
+            var email = user.Identity?.Name;
+            var appUser = await UserManager.FindByEmailAsync(email);
+
+            TipoUsuario = appUser?.TipoUsuario?.ToLower() ?? "invitado";
+            UsuarioId = appUser?.Id ?? "0";
         }
 
         productos = ArticuloService.Consultar();
@@ -124,9 +160,54 @@
             ).ToList();
     }
 
-    private void AgregarAlCarrito(ArticulosDtos producto)
+    private async Task AgregarAlPedidoTemporal(ArticulosDtos producto)
     {
-        contadorCarrito++;
-        // Aquí puedes agregar lógica para añadir el producto al carrito real
+        if (!PedidoTemporalStore.PedidosPorUsuario.TryGetValue(UsuarioId, out var pedido))
+        {
+            pedido = new PedidosDtos
+            {
+                UsuarioId = UsuarioId,
+                Estado = "pendiente",
+                FechaPedido = DateTime.Now,
+                Total = 0,
+                TipoEntrega = "",
+                Direccion = "",
+                Delivery = "",
+                Detalles = new List<DetallePedidosDtos>()
+            };
+
+            PedidoTemporalStore.PedidosPorUsuario[UsuarioId] = pedido;
+        }
+
+        var detalleExistente = pedido.Detalles.FirstOrDefault(d => d.ArticuloId == producto.Id);
+        if (detalleExistente != null)
+        {
+            detalleExistente.Cantidad += 1;
+        }
+        else
+        {
+            pedido.Detalles.Add(new DetallePedidosDtos
+            {
+                ArticuloId = producto.Id,
+                Cantidad = 1
+            });
+        }
+
+        mensajeCarrito = $"✅ {producto.Nombre} Agregado en el carrito.";
+        mostrarMensaje = true;
+        await OcultarMensajeEn3Segundos();
+    }
+
+    private async Task OcultarMensajeEn3Segundos()
+    {
+        await Task.Delay(2000);
+        mostrarMensaje = false;
+        StateHasChanged();
+    }
+
+    private void OnSearchChanged(ChangeEventArgs e)
+    {
+        searchTerm = e.Value?.ToString() ?? "";
+        filtrarProductos();
     }
 }

@@ -9,6 +9,7 @@ namespace TheFoodHood.Web.Data
         public ICollection<Pedido> Pedidos { get; set; } = new List<Pedido>();
         public string Nombre { get; set; }
         public string Direccion { get; set; }
+        public string TipoUsuario { get; set; }
     }
 
 }

@@ -1,1 +1,319 @@
-﻿
+﻿@page "/pedidos"
+@using TheFoodHood.Web.Data.Dtos
+@using TheFoodHood.Web.Data.Services
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.Components.Authorization
+
+@inject IDetallePedidoService DetallePedidoService
+@inject IPedidoService PedidoService
+@inject IArticuloService ArticuloService
+@inject UserManager<ApplicationUser> UserManager
+@inject AuthenticationStateProvider AuthProvider
+
+@rendermode InteractiveServer
+
+<PageTitle>Pedidos - FoodHood</PageTitle>
+
+<!-- Partículas de fondo -->
+<div class="background-particles" id="particles"></div>
+
+<div class="shared-background">
+    <!-- ─── ENCABEZADO MEJORADO ─────────────────────────────────── -->
+    <div class="header-menu">
+        <div class="logo-container">
+            <img src="img/logo.png" alt="logo" class="logo-img" />
+            <span class="logo-text">FoodHood</span>
+        </div>
+
+        <div class="menu-title">Pedidos</div>
+
+        <div class="user-info">
+            @if (IsAuthenticated)
+            {
+                <div class="tipo-usuario">@TipoUsuario</div>
+                <form class="logout-form" action="Account/Logout" method="post">
+                    <AntiforgeryToken />
+                    <input type="hidden" name="ReturnUrl" value="" />
+                    <button type="submit" class="btn-logout">
+                        <i class="fas fa-sign-out-alt"></i> CERRAR SESIÓN
+                    </button>
+                </form>
+            }
+            else
+            {
+                <a href="/Account/Login" class="btn-logout">
+                    <i class="fas fa-sign-in-alt"></i> INICIAR SESIÓN
+                </a>
+            }
+        </div>
+    </div>
+
+    <!-- ─── LISTADO MEJORADO ────────────────────────────────────── -->
+    <div class="pedidos-grid">
+        @if (!PedidosAgrupados.Any())
+        {
+            <div class="empty-state">
+                <i class="fas fa-clipboard-list"></i>
+                <h3>No hay pedidos disponibles</h3>
+                <p>Los pedidos aparecerán aquí cuando estén disponibles</p>
+            </div>
+        }
+        else
+        {
+            @foreach (var pedido in PedidosAgrupados)
+            {
+                <div class="pedido-contenedor" style="animation-delay: @(PedidosAgrupados.IndexOf(pedido) * 0.2)s">
+                    <!-- Header del pedido -->
+                    <div class="pedido-header">
+                        <h3 class="pedido-id">Pedido #@pedido.Pedido.Id</h3>
+                        <span @key="pedido.Pedido.Id + pedido.Pedido.Estado"
+                              class="badge-estado @(CssEstado(pedido.Pedido.Estado))">
+                            <i class="@GetIconoEstado(pedido.Pedido.Estado)"></i>
+                            @pedido.Pedido.Estado.ToUpper()
+                        </span>
+                    </div>
+
+                    <!-- Información del pedido -->
+                    <div class="pedido-info">
+                        <p><i class="fas fa-user"></i><strong>Cliente:</strong> @pedido.Usuario.Nombre</p>
+                        <p><i class="fas fa-phone"></i><strong>Teléfono:</strong> @pedido.Usuario.PhoneNumber</p>
+                        <p><i class="@GetIconoEntrega(pedido.Pedido.TipoEntrega)"></i><strong>Entrega:</strong> @pedido.Pedido.TipoEntrega @pedido.Pedido.Direccion</p>
+                        <p><i class="fas fa-dollar-sign"></i><strong>Total:</strong> RD$@pedido.Pedido.Total</p>
+                    </div>
+
+                    <!-- Productos del pedido -->
+                    <div class="productos-del-pedido">
+                        @foreach (var prod in pedido.Productos)
+                        {
+                            <div class="producto-item">
+                                <img src="@prod.ImagenUrl" class="producto-img" alt="@prod.Nombre" />
+                                <p class="pedido-titulo">@prod.Nombre</p>
+                                <p class="pedido-desc">@prod.Descripcion</p>
+                                <div class="producto-precio">
+                                    <span><strong>Cant.:</strong> @prod.Cantidad</span>
+                                    <span><strong>RD$</strong> @prod.Precio</span>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Controles de administrador -->
+                    @if (TipoUsuario == "administrador")
+                    {
+                        <div class="admin-controls">
+                            <label><i class="fas fa-edit"></i> Actualizar estado:</label>
+                            <select class="form-select" @bind="pedido.Pedido.Estado">
+                                <!-- Común -->
+                                <option value="pendiente">🕓 Pendiente</option>
+
+                                @* ——— Entrega a domicilio ——— *@
+                                @if (pedido.Pedido.TipoEntrega == "delivery")
+                                {
+                                    <option value="preparando">👨‍🍳 Preparando</option>
+                                    <option value="en camino">🚚 En camino</option>
+                                    <option value="entregado">✅ Entregado</option>
+                                }
+
+                                @* ——— Pasar a recoger ——— *@
+                                @if (pedido.Pedido.TipoEntrega == "pasar a buscar")
+                                {
+                                    <option value="preparado">👨‍🍳 Preparado</option>
+                                    <option value="listo">📦 Listo</option>
+                                    <option value="entregado">✅ Entregado</option>
+                                }
+                            </select>
+
+                            <button class="btn" @onclick="() => GuardarEstado(pedido.Pedido)">
+                                <i class="fas fa-save"></i> Guardar Estado
+                            </button>
+                        </div>
+                    }
+                </div>
+            }
+        }
+    </div>
+</div>
+
+<!-- Scripts para efectos -->
+<script>
+    // Crear partículas animadas
+    function createParticles() {
+        const particlesContainer = document.getElementById('particles');
+        if (!particlesContainer) return;
+
+        particlesContainer.innerHTML = ''; // Limpiar partículas existentes
+        const particleCount = 50;
+
+        for (let i = 0; i < particleCount; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            particle.style.left = Math.random() * 100 + '%';
+            particle.style.animationDelay = Math.random() * 15 + 's';
+            particle.style.animationDuration = (Math.random() * 10 + 10) + 's';
+            particlesContainer.appendChild(particle);
+        }
+    }
+
+    // Efectos de botones
+    function addButtonEffects() {
+        const buttons = document.querySelectorAll('.btn, .btn-logout');
+        buttons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                // Crear efecto de ondas
+                const ripple = document.createElement('span');
+                const rect = this.getBoundingClientRect();
+                const size = Math.max(rect.width, rect.height);
+                ripple.style.width = ripple.style.height = size + 'px';
+                ripple.style.left = (e.clientX - rect.left - size / 2) + 'px';
+                ripple.style.top = (e.clientY - rect.top - size / 2) + 'px';
+                ripple.classList.add('ripple');
+
+                this.appendChild(ripple);
+
+                setTimeout(() => {
+                    ripple.remove();
+                }, 600);
+            });
+        });
+    }
+
+    // Inicializar cuando el DOM esté listo
+    document.addEventListener('DOMContentLoaded', function() {
+        createParticles();
+        addButtonEffects();
+    });
+
+    // Reinicializar después de actualizaciones de Blazor
+    window.addEventListener('load', function() {
+        setTimeout(() => {
+            createParticles();
+            addButtonEffects();
+        }, 100);
+    });
+</script>
+
+@code {
+    /* ─── Estado global de la página ─────────────────────────── */
+    private string TipoUsuario = "";
+    private string UsuarioId = "";
+    private bool IsAuthenticated;
+    ApplicationUser? UsuarioActual;
+
+    /* ─── DTOs de presentación ───────────────────────────────── */
+    private class ProductoVista
+    {
+        public int ArticuloId { get; set; }
+        public string Nombre { get; set; } = "";
+        public string Descripcion { get; set; } = "";
+        public string ImagenUrl { get; set; } = "";
+        public decimal Precio { get; set; }
+        public int Cantidad { get; set; }
+    }
+
+    private class PedidoAgrupado
+    {
+        public PedidosDtos Pedido { get; set; } = new();
+        public ApplicationUser Usuario { get; set; } = new();
+        public List<ProductoVista> Productos { get; set; } = new();
+    }
+
+    private readonly List<PedidoAgrupado> PedidosAgrupados = new();
+
+    /* ─── Carga inicial ──────────────────────────────────────── */
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            UsuarioActual = await UserManager.FindByEmailAsync(user.Identity.Name);
+            UsuarioId = UsuarioActual?.Id ?? "";
+            TipoUsuario = UsuarioActual?.TipoUsuario?.ToLower() ?? "invitado";
+            IsAuthenticated = true;
+        }
+
+        var detalles = DetallePedidoService.Consultar();
+        var articulos = ArticuloService.Consultar().ToDictionary(a => a.Id);
+        var pedidos = PedidoService.Consultar();
+
+        foreach (var ped in pedidos)
+        {
+            // Ocultar entregados
+            if (ped.Estado.Equals("entregado", StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            // Un cliente solo ve sus propios pedidos
+            if (TipoUsuario == "cliente" && ped.UsuarioId != UsuarioId)
+                continue;
+
+            var usuario = await UserManager.FindByIdAsync(ped.UsuarioId);
+            if (usuario is null) continue;
+
+            var dets = detalles.Where(d => d.PedidoId == ped.Id).ToList();
+            var vista = new List<ProductoVista>();
+
+            foreach (var d in dets)
+            {
+                if (articulos.TryGetValue(d.ArticuloId, out var art))
+                {
+                    vista.Add(new ProductoVista
+                    {
+                        ArticuloId = art.Id,
+                        Nombre = art.Nombre,
+                        Descripcion = art.Descripcion,
+                        ImagenUrl = art.ImagenUrl,
+                        Precio = art.Precio,
+                        Cantidad = d.Cantidad
+                    });
+                }
+            }
+
+            PedidosAgrupados.Add(new PedidoAgrupado
+            {
+                Pedido = ped,
+                Usuario = usuario,
+                Productos = vista
+            });
+        }
+    }
+
+    /* ─── Guardar / filtrar entregados ───────────────────────── */
+    private void GuardarEstado(PedidosDtos pedido)
+    {
+        PedidoService.Modificar(pedido);
+
+        if (pedido.Estado.Equals("entregado", StringComparison.OrdinalIgnoreCase))
+        {
+            // Ocúltalo inmediatamente de la lista en memoria
+            var item = PedidosAgrupados.FirstOrDefault(p => p.Pedido.Id == pedido.Id);
+            if (item != null) PedidosAgrupados.Remove(item);
+        }
+
+        StateHasChanged();
+    }
+
+    /* ─── Métodos auxiliares para iconos y estilos ─────────── */
+    private static string CssEstado(string estado)
+        => estado.ToLower().Replace(" ", "-");
+
+    private static string GetIconoEstado(string estado)
+        => estado.ToLower() switch
+        {
+            "pendiente" => "fas fa-clock",
+            "preparando" => "fas fa-utensils",
+            "preparado" => "fas fa-check-circle",
+            "listo" => "fas fa-box",
+            "en camino" => "fas fa-truck",
+            "entregado" => "fas fa-check-double",
+            _ => "fas fa-info-circle"
+        };
+
+    private static string GetIconoEntrega(string tipoEntrega)
+        => tipoEntrega?.ToLower() switch
+        {
+            "delivery" => "fas fa-truck",
+            "pasar a buscar" => "fas fa-store",
+            _ => "fas fa-map-marker-alt"
+        };
+}

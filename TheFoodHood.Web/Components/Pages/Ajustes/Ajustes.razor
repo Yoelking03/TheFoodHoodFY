@@ -1,5 +1,329 @@
-﻿<h3>Ajustes</h3>
+﻿@page "/ajustes"
+@using Microsoft.AspNetCore.Identity
+@using TheFoodHood.Web.Data.Entities
+@using Microsoft.AspNetCore.Authorization
+@inject UserManager<ApplicationUser> UserManager
+@inject SignInManager<ApplicationUser> SignInManager
+@inject IJSRuntime JSRuntime
+@attribute [Authorize]
+@rendermode InteractiveServer
+
+<PageTitle>Ajustes de Usuario</PageTitle>
+
+<link href="~/css/ajustes.css" rel="stylesheet" />
+
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="text-center mb-4">
+                <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3 user-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <h2 class="page-title">Ajustes de Usuario</h2>
+            </div>
+
+            @if (!string.IsNullOrEmpty(mensaje))
+            {
+                <div class="alert @(esExito ? "alert-success" : "alert-danger") alert-dismissible fade show" role="alert">
+                    @mensaje
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            @if (!modoEdicion)
+            {
+                <div class="text-center">
+                    <button type="button"
+                            class="btn btn-danger btn-lg px-5 py-2 btn-edit"
+                            @onclick="HabilitarEdicion">
+                        EDITAR DATOS
+                    </button>
+                </div>
+            }
+            else
+            {
+                <form @onsubmit="GuardarCambios" @onsubmit:preventDefault="true">
+                    <div class="mb-4">
+                        <div class="input-group">
+                            <span class="input-group-text input-group-text-custom">
+                                <i class="fas fa-user"></i>
+                            </span>
+                            <input @bind="nombre"
+                                   class="form-control form-control-custom"
+                                   placeholder="Nombre" />
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <div class="input-group">
+                            <span class="input-group-text input-group-text-custom">
+                                <i class="fas fa-phone"></i>
+                            </span>
+                            <input @bind="telefono"
+                                   class="form-control form-control-custom"
+                                   placeholder="Teléfono" />
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <div class="input-group">
+                            <span class="input-group-text input-group-text-custom">
+                                <i class="fas fa-map-marker-alt"></i>
+                            </span>
+                            <input @bind="direccion"
+                                   class="form-control form-control-custom"
+                                   placeholder="Dirección" />
+                        </div>
+                    </div>
+
+                    <div class="text-center">
+                        <button type="submit"
+                                class="btn btn-success btn-lg px-4 py-2 me-3 btn-action"
+                                disabled="@cargando">
+                            @if (cargando)
+                            {
+                                <span class="spinner-border spinner-border-sm me-2"></span>
+                            }
+                            GUARDAR
+                        </button>
+                        <button type="button"
+                                class="btn btn-secondary btn-lg px-4 py-2 btn-action"
+                                @onclick="CancelarEdicion">
+                            CANCELAR
+                        </button>
+                    </div>
+                </form>
+            }
+
+            <div class="text-center mt-4">
+                <p class="contact-info">
+                    <strong>Contacto:</strong><br>
+                    <i class="fas fa-phone"></i> Tel: (809) 300-0000<br>
+                    <i class="fas fa-envelope"></i> Correo: TheFoodHood@gmail.com<br>
+                    <a href="/ajustes" @onclick="MostrarTerminos" @onclick:preventDefault="true" @onclick:stopPropagation="true">
+                        Términos y Condiciones
+                    </a>
+                   
+                </p>
+            </div>
+            
+            <!-- Modal de Términos y Condiciones -->
+            @if (mostrarModalTerminos)
+            {
+                <div class="modal fade show d-block modal-terminos" tabindex="-1">
+                    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Términos y Condiciones de Uso</h5>
+                                <button type="button" class="btn-close btn-close-white" @onclick="CerrarModalTerminos"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p><strong>Última actualización:</strong> 25 de mayo de 2025</p>
+                                <p>Bienvenido/a a <strong>THE FOOD HOOD</strong>. Estos Términos y Condiciones regulan el acceso y uso de nuestra aplicación, así como los servicios que ofrecemos a través de la misma.</p>
+
+                                <p>
+                                    <strong>1. Aceptación de los Términos</strong><br>
+                                    Al acceder o utilizar esta aplicación, aceptas cumplir estos Términos y Condiciones. Si no estás de acuerdo con alguno de ellos, no deberías usar la aplicación.
+                                </p>
+
+                                <p>
+                                    <strong>2. Registro y Cuenta</strong><br>
+                                    Debes proporcionar información verdadera, exacta y actualizada al registrarte.<br>
+                                    Eres responsable de mantener la confidencialidad de tu cuenta y contraseña.<br>
+                                    No está permitido ceder, vender ni transferir tu cuenta a terceros.
+                                </p>
+
+                                <p>
+                                    <strong>3. Uso de la Aplicación</strong><br>
+                                    El uso de la app debe ser únicamente con fines legales y personales.<br>
+                                    No debes intentar dañar, sobrecargar o afectar el funcionamiento de la aplicación.<br>
+                                    Nos reservamos el derecho de suspender cuentas que violen estos términos.
+                                </p>
+
+                                <p>
+                                    <strong>4. Permisos Solicitados</strong><br>
+                                    Para ofrecerte una mejor experiencia y garantizar el correcto funcionamiento de la app, solicitaremos los siguientes permisos:<br>
+                                    • Ubicación: Para mostrar servicios o entregas cerca de ti y optimizar la logística.<br>
+                                    • Acceso a cámara y galería: Para permitir que subas imágenes de productos, comprobantes, perfil, etc.<br>
+                                    • Notificaciones push: Para informarte sobre el estado de tus pedidos, promociones u otras novedades importantes.
+                                </p>
+
+                                <p>
+                                    <strong>5. Compras y Pedidos</strong><br>
+                                    Todos los precios y servicios disponibles están sujetos a cambios sin previo aviso.<br>
+                                    El usuario es responsable de revisar el pedido antes de confirmarlo.<br>
+                                    No nos hacemos responsables por errores cometidos por el usuario durante la compra.
+                                </p>
+
+                                <p>
+                                    <strong>6. Entregas</strong><br>
+                                    Si la app incluye entrega de productos, es responsabilidad del usuario proporcionar una dirección correcta.<br>
+                                    La entrega está sujeta a disponibilidad y condiciones logísticas.<br>
+                                    La ubicación en tiempo real puede utilizarse únicamente para facilitar la entrega.
+                                </p>
+
+                                <p>
+                                    <strong>7. Propiedad Intelectual</strong><br>
+                                    Todo el contenido de la aplicación pertenece a THE FOOD HOOD o a sus licenciantes.<br>
+                                    No está permitida la reproducción total o parcial sin autorización.
+                                </p>
+
+                                <p>
+                                    <strong>8. Limitación de Responsabilidad</strong><br>
+                                    No garantizamos que el servicio sea ininterrumpido o libre de errores.<br>
+                                    No somos responsables por daños directos, indirectos o incidentales derivados del uso o imposibilidad de usar la app.
+                                </p>
+
+                                <p>
+                                    <strong>9. Modificaciones</strong><br>
+                                    Nos reservamos el derecho de modificar estos Términos en cualquier momento.<br>
+                                    El uso continuado de la app implica la aceptación de los nuevos términos.
+                                </p>
+
+                                <p>
+                                    <strong>10. Política de Privacidad</strong><br>
+                                    Consulta nuestra Política de Privacidad para saber cómo recopilamos, usamos y protegemos tus datos personales.
+                                </p>
+
+                                <p>
+                                    <strong>11. Contacto</strong><br>
+                                    📧 TheFoodHood@gmail.com<br>
+                                    📱 809-939-8999
+                                </p>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" @onclick="CerrarModalTerminos">Cerrar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
 
 @code {
+    private ApplicationUser? usuario;
+    private bool cargando = false;
+    private string mensaje = string.Empty;
+    private bool esExito = false;
+    private bool modoEdicion = false;
+    private bool mostrarModalTerminos = false;
 
+
+    private string nombre = string.Empty;
+    private string telefono = string.Empty;
+    private string direccion = string.Empty;
+
+    // Variables para mantener los valores originales
+    private string nombreOriginal = string.Empty;
+    private string telefonoOriginal = string.Empty;
+    private string direccionOriginal = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        usuario = await UserManager.GetUserAsync(SignInManager.Context.User);
+        if (usuario != null)
+        {
+            nombre = nombreOriginal = usuario.Nombre ?? string.Empty;
+            telefono = telefonoOriginal = usuario.PhoneNumber ?? string.Empty;
+            direccion = direccionOriginal = usuario.Direccion ?? string.Empty;
+        }
+    }
+
+    private void HabilitarEdicion()
+    {
+        modoEdicion = true;
+        mensaje = string.Empty;
+    }
+
+    private void CancelarEdicion()
+    {
+        // Restaurar valores originales
+        nombre = nombreOriginal;
+        telefono = telefonoOriginal;
+        direccion = direccionOriginal;
+
+        modoEdicion = false;
+        mensaje = string.Empty;
+    }
+
+    private void MostrarTerminos()
+    {
+        mostrarModalTerminos = true;
+    }
+
+
+    private void CerrarModalTerminos()
+    {
+        mostrarModalTerminos = false;
+    }
+
+    private async Task GuardarCambios()
+    {
+        if (usuario == null) return;
+
+        cargando = true;
+        mensaje = string.Empty;
+
+        try
+        {
+            // Actualizar los campos del usuario
+            usuario.Nombre = nombre;
+            usuario.PhoneNumber = telefono;
+            usuario.Direccion = direccion;
+
+            var resultado = await UserManager.UpdateAsync(usuario);
+
+            if (resultado.Succeeded)
+            {
+                mensaje = "Los cambios se guardaron correctamente.";
+                esExito = true;
+                modoEdicion = false;
+
+                // Actualizar valores originales
+                nombreOriginal = nombre;
+                telefonoOriginal = telefono;
+                direccionOriginal = direccion;
+
+                // Opcional: Refrescar la sesión si es necesario
+                // await SignInManager.RefreshSignInAsync(usuario);
+
+                // Ocultar el mensaje después de 2 segundos
+                _ = Task.Delay(2000).ContinueWith(_ =>
+                {
+                    mensaje = string.Empty;
+                    InvokeAsync(StateHasChanged);
+                });
+            }
+            else
+            {
+                mensaje = "Error al guardar los cambios: " + string.Join("; ", resultado.Errors.Select(e => e.Description));
+                esExito = false;
+
+                // Ocultar el mensaje después de 2 segundos
+                _ = Task.Delay(2000).ContinueWith(_ =>
+                {
+                    mensaje = string.Empty;
+                    InvokeAsync(StateHasChanged);
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            mensaje = "Error inesperado: " + ex.Message;
+            esExito = false;
+
+            // Ocultar el mensaje después de 2 segundos
+            _ = Task.Delay(2000).ContinueWith(_ =>
+            {
+                mensaje = string.Empty;
+                InvokeAsync(StateHasChanged);
+            });
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
 }

@@ -1,51 +1,74 @@
 ﻿@page "/articulos"
-@inject IArticuloService ArticuloService
-@inject NavigationManager Navigation
-@inject IJSRuntime JS
+@rendermode InteractiveServer
 
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Identity
+@using TheFoodHood.Web.Data.Entities          // ← cambia a tu namespace real
 @using TheFoodHood.Web.Data.Dtos
 @using TheFoodHood.Web.Data.Services
 
+@inject IArticuloService ArticuloService
+@inject AuthenticationStateProvider AuthStateProvider
+@inject UserManager<ApplicationUser> UserManager
+@inject IJSRuntime JS
 
 <PageTitle>Artículos</PageTitle>
 
 <div class="shared-background">
-    <!-- HEADER -->
+    <!-- ░░ CABECERA ░░ -->
     <div class="header-menu">
-        <img src="assets/img/logo.png" alt="logo" class="logo-img" />
-        <h1 class="menu-title">Productos</h1>
+        <div class="logo-container">
+            <img src="img/logo.png" alt="logo" class="logo-img" />
+            <span class="logo-text">FoodHood</span>
+        </div>
+
+        <div class="menu-title">Artículos</div>
+
         <div class="user-info">
-            <span>Admin</span>
+            @if (IsAuthenticated)
+            {
+                <div class="tipo-usuario">@TipoUsuario</div>
+                <form class="logout-form" action="Account/Logout" method="post">
+                    <AntiforgeryToken />
+                    <input type="hidden" name="ReturnUrl" value="" />
+                    <button type="submit" class="btn-logout">CERRAR SESIÓN</button>
+                </form>
+            }
+            else
+            {
+                <a href="/Account/Login" class="btn-logout">INICIAR SESIÓN</a>
+            }
         </div>
     </div>
 
-    <!-- CONTROLES -->
+    <!-- ░░ CONTROLES ░░ -->
     <div class="productos-controls">
-        <h2 class="productos-subtitulo">Lista de productos</h2>
+        <h2 class="productos-subtitulo">Lista de artículos</h2>
 
         <div class="productos-search">
-            <input type="text" class="form-control"
-                   placeholder="Buscar productos..."
-                   @bind="searchTerm" @bind:event="oninput" />
+            <input type="text"
+                   class="form-control"
+                   placeholder="Buscar Artículos..."
+                   @bind="searchTerm"
+                   @bind:event="oninput" />
         </div>
 
         <a href="/agregar-articulos" class="btn btn-outline-danger agregar-nuevo text-center">
             Agregar Nuevo
         </a>
-
     </div>
 
     <hr class="divider" />
 
-    <!-- SIN PRODUCTOS -->
+    <!-- ░░ SIN PRODUCTOS ░░ -->
     @if (productosFiltrados.Count == 0)
     {
         <div class="text-center">
-            <h2>No hay productos disponibles</h2>
+            <h2>No hay artículos disponibles</h2>
         </div>
     }
 
-    <!-- LISTA DE PRODUCTOS -->
+    <!-- ░░ LISTA DE PRODUCTOS ░░ -->
     <div class="productos-container" hidden="@(!productosFiltrados.Any())">
         @foreach (var producto in productosFiltrados)
         {
@@ -58,64 +81,55 @@
                 <h3 class="producto-nombre">@producto.Nombre</h3>
                 <p class="producto-desc">@producto.Descripcion</p>
 
-                <!-- BOTONES DE CADA PRODUCTO -->
+                <!-- ░░ BOTONES ░░ -->
                 <div class="producto-botones">
-                    <a href="/agregar-articulos/@producto.Id" class="btn btn-outline-secondary btn-sm">Modificar</a>
+                    <a href="/agregar-articulos/@producto.Id" class="btn-producto">Modificar</a>
 
-                    <button type="button" class="btn btn-outline-secondary btn-sm" @onclick="@(() => ConfirmarEliminar(producto.Id))">Eliminar</button>
-
-
-
+                    <button class="btn-producto"
+                            @onclick="() => ConfirmarArchivar(producto.Id)">
+                        Archivar
+                    </button>
                 </div>
-
             </div>
         }
     </div>
 </div>
 
 @code {
+    /* ░░ Campos ░░ */
     private List<ArticulosDtos> productos = new();
     private List<ArticulosDtos> productosFiltrados = new();
     private string searchTerm = string.Empty;
+    private string TipoUsuario = "invitado";
+    private string UsuarioId = "0";
+    private bool IsAuthenticated;
 
-    protected override void OnInitialized()
+    /* ░░ Ciclo de vida ░░ */
+    protected override async Task OnInitializedAsync()
     {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        IsAuthenticated = user.Identity?.IsAuthenticated ?? false;
+
+        if (IsAuthenticated)
+        {
+            var email = user.Identity?.Name;
+            var appUser = await UserManager.FindByEmailAsync(email);
+
+            TipoUsuario = appUser?.TipoUsuario?.ToLower() ?? "invitado";
+            UsuarioId = appUser?.Id ?? "0";
+        }
+
         CargarProductos();
     }
 
+    /* ░░ Carga + Filtro ░░ */
     private void CargarProductos()
     {
-        productos = ArticuloService.Consultar();
+        productos = ArticuloService.Consultar();   // ← trae solo los NO eliminados
         FiltrarProductos();
     }
-
-    private async Task ConfirmarEliminar(int id)
-    {
-        var confirmado = await JS.InvokeAsync<bool>("confirm", "¿Seguro que deseas eliminar este producto?");
-        if (confirmado)
-        {
-            await EliminarProducto(id);
-        }
-    }
-
-    private async Task EliminarProducto(int id)
-    {
-        var eliminado = ArticuloService.Eliminar(id);
-        if (eliminado)
-        {
-            await JS.InvokeVoidAsync("alert", "Producto eliminado correctamente.");
-            CargarProductos(); // recargar y filtrar
-        }
-        else
-        {
-            await JS.InvokeVoidAsync("alert", "Error al eliminar el producto.");
-        }
-    }
-
-
-
-
-
 
     private void FiltrarProductos()
     {
@@ -127,5 +141,25 @@
             .ToList();
     }
 
-  
+    /* ░░ Archivar ░░ */
+    private async Task ConfirmarArchivar(int id)
+    {
+        var ok = await JS.InvokeAsync<bool>("confirm", "¿Archivar este artículo?");
+        if (ok)
+            ArchivarProducto(id);
+    }
+
+    private void ArchivarProducto(int id)
+    {
+        var exito = ArticuloService.Archivar(id);  // ← marca Eliminado = true
+        if (exito)
+        {
+            JS.InvokeVoidAsync("alert", "Artículo archivado correctamente.");
+            CargarProductos();
+        }
+        else
+        {
+            JS.InvokeVoidAsync("alert", "Error al archivar el artículo.");
+        }
+    }
 }

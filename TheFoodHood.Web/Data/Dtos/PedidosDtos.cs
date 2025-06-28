@@ -11,5 +11,6 @@
         public string Direccion { get; set; } = string.Empty;
         public string TipoEntrega { get; set; } = string.Empty;
 
+        public List<DetallePedidosDtos> Detalles { get; set; } = new();
     }
 }

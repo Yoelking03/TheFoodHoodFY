@@ -91,6 +91,45 @@
         color: white;
         cursor: pointer;
     }
+.btn-registrarse {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 10px 24px;
+    font-size: 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-top: 15px;
+    transition: background-color 0.3s;
+}
+
+    .btn-registrarse:hover {
+        background-color: #c82333;
+    }
+
+.contenedor-regresar {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.btn-regresar {
+    background-color: transparent;
+    color: #ffffff;
+    border: 1px solid #ffffff;
+    padding: 8px 20px;
+    font-size: 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+    .btn-regresar:hover {
+        background-color: #ffffff;
+        color: #000000;
+    }
+
+
 
 .alerta-flotante {
     position: fixed;

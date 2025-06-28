@@ -4,8 +4,13 @@ using TheFoodHood.Web.Data.Entities;
 
 namespace TheFoodHood.Web.Data
 {
-    public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : IdentityDbContext<ApplicationUser>(options)
+    public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     {
+        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
+            : base(options)
+        {
+        }
+
         public DbSet<Articulo> Articulos { get; set; } = null!;
         public DbSet<Pedido> Pedidos { get; set; } = null!;
         public DbSet<DetallePedido> DetallePedidos { get; set; } = null!;
@@ -18,24 +23,26 @@ namespace TheFoodHood.Web.Data
             builder.Entity<Pedido>()
                 .HasOne(p => p.Usuario)
                 .WithMany(u => u.Pedidos)
-                .HasForeignKey(p => p.UsuarioId);
+                .HasForeignKey(p => p.UsuarioId)
+                .OnDelete(DeleteBehavior.Cascade);
 
-            // Relación DetallePedido → Pedido
-            builder.Entity<DetallePedido>()
-                .HasOne(dp => dp.Pedido)
-                .WithMany()
-                .HasForeignKey(dp => dp.PedidoId);
+            // Relación Pedido → DetallePedidos
+            builder.Entity<Pedido>()
+                .HasMany(p => p.Detalles)
+                .WithOne(dp => dp.Pedido)
+                .HasForeignKey(dp => dp.PedidoId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             // Relación DetallePedido → Articulo
             builder.Entity<DetallePedido>()
                 .HasOne(dp => dp.Articulo)
-                .WithMany()
-                .HasForeignKey(dp => dp.ArticuloId);
+                .WithMany(a => a.DetallesPedido!)
+                .HasForeignKey(dp => dp.ArticuloId)
+                .OnDelete(DeleteBehavior.Restrict); // evita eliminar artículo si hay pedidos
 
-            // Clave primaria de DetallePedido (si usas Id)
+            // Clave primaria explícita
             builder.Entity<DetallePedido>()
                 .HasKey(dp => dp.Id);
         }
-
     }
 }

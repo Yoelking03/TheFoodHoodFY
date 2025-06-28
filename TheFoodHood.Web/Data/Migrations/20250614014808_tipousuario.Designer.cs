@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TheFoodHood.Web.Data;
 
@@ -11,9 +12,11 @@ using TheFoodHood.Web.Data;
 namespace TheFoodHood.Web.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250614014808_tipousuario")]
+    partial class tipousuario
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -21,32 +24,6 @@ namespace TheFoodHood.Web.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
-
-            modelBuilder.Entity("DetallePedido", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("ArticuloId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Cantidad")
-                        .HasColumnType("int");
-
-                    b.Property<int>("PedidoId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ArticuloId");
-
-                    b.HasIndex("PedidoId");
-
-                    b.ToTable("DetallePedidos");
-                });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
                 {
@@ -268,16 +245,11 @@ namespace TheFoodHood.Web.Migrations
 
                     b.Property<string>("CategoriaNombre")
                         .IsRequired()
-                        .HasMaxLength(60)
-                        .HasColumnType("nvarchar(60)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Descripcion")
                         .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<bool>("Eliminado")
-                        .HasColumnType("bit");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("ImagenUrl")
                         .IsRequired()
@@ -285,15 +257,40 @@ namespace TheFoodHood.Web.Migrations
 
                     b.Property<string>("Nombre")
                         .IsRequired()
-                        .HasMaxLength(120)
-                        .HasColumnType("nvarchar(120)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("Precio")
-                        .HasColumnType("decimal(10,2)");
+                        .HasColumnType("decimal(18,2)");
 
                     b.HasKey("Id");
 
                     b.ToTable("Articulos");
+                });
+
+            modelBuilder.Entity("TheFoodHood.Web.Data.Entities.DetallePedido", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ArticuloId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Cantidad")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PedidoId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ArticuloId");
+
+                    b.HasIndex("PedidoId");
+
+                    b.ToTable("DetallePedidos");
                 });
 
             modelBuilder.Entity("TheFoodHood.Web.Data.Entities.Pedido", b =>
@@ -335,25 +332,6 @@ namespace TheFoodHood.Web.Migrations
                     b.HasIndex("UsuarioId");
 
                     b.ToTable("Pedidos");
-                });
-
-            modelBuilder.Entity("DetallePedido", b =>
-                {
-                    b.HasOne("TheFoodHood.Web.Data.Entities.Articulo", "Articulo")
-                        .WithMany("DetallesPedido")
-                        .HasForeignKey("ArticuloId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("TheFoodHood.Web.Data.Entities.Pedido", "Pedido")
-                        .WithMany("Detalles")
-                        .HasForeignKey("PedidoId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Articulo");
-
-                    b.Navigation("Pedido");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -407,6 +385,25 @@ namespace TheFoodHood.Web.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("TheFoodHood.Web.Data.Entities.DetallePedido", b =>
+                {
+                    b.HasOne("TheFoodHood.Web.Data.Entities.Articulo", "Articulo")
+                        .WithMany()
+                        .HasForeignKey("ArticuloId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("TheFoodHood.Web.Data.Entities.Pedido", "Pedido")
+                        .WithMany()
+                        .HasForeignKey("PedidoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Articulo");
+
+                    b.Navigation("Pedido");
+                });
+
             modelBuilder.Entity("TheFoodHood.Web.Data.Entities.Pedido", b =>
                 {
                     b.HasOne("TheFoodHood.Web.Data.ApplicationUser", "Usuario")
@@ -421,16 +418,6 @@ namespace TheFoodHood.Web.Migrations
             modelBuilder.Entity("TheFoodHood.Web.Data.ApplicationUser", b =>
                 {
                     b.Navigation("Pedidos");
-                });
-
-            modelBuilder.Entity("TheFoodHood.Web.Data.Entities.Articulo", b =>
-                {
-                    b.Navigation("DetallesPedido");
-                });
-
-            modelBuilder.Entity("TheFoodHood.Web.Data.Entities.Pedido", b =>
-                {
-                    b.Navigation("Detalles");
                 });
 #pragma warning restore 612, 618
         }

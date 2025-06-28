@@ -28,11 +28,9 @@ builder.Services.AddScoped<IdentityUserAccessor>();
 builder.Services.AddScoped<IdentityRedirectManager>();
 
 // --------------------- BASE DE DATOS ---------------------
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(connectionString));
+       options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // --------------------- IDENTITY (con roles) ---------------------
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>()

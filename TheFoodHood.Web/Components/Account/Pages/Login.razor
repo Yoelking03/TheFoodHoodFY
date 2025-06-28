@@ -38,7 +38,7 @@
         <!-- Checkbox -->
         <div class="checkbox-container">
             <input type="checkbox" @bind="Input.RememberMe" class="form-check-input" />
-            <label class="form-check-label ms-2">Recordarme</label>
+            <label class="recordar-checkbox">Recordarme</label>
         </div>
 
         <!-- Botón -->
@@ -51,11 +51,12 @@
         <!-- Enlaces -->
         <div class="mt-4 text-center text-white custom-links">
             <p>
-                <a href="Account/ForgotPassword" class="custom-link">¿Olvidaste tu contraseña?</a>
-            </p>
-            <p>
                 <a href="@(NavigationManager.GetUriWithQueryParameters("Account/Register", new Dictionary<string, object?> { ["ReturnUrl"] = ReturnUrl }))" class="custom-link">Registrarse como nuevo usuario</a>
             </p>
+            <p>
+                <a href="Account/ForgotPassword" class="custom-link">¿Olvidaste tu contraseña?</a>
+            </p>
+          
             <p>
                 <a href="Account/ResendEmailConfirmation" class="custom-link">Reenviar confirmación de correo</a>
             </p>

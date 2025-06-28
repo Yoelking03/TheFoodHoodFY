@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TheFoodHood.Web.Data;
 
@@ -11,9 +12,11 @@ using TheFoodHood.Web.Data;
 namespace TheFoodHood.Web.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250614054116_coreciondeDtos2")]
+    partial class coreciondeDtos2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -33,17 +36,27 @@ namespace TheFoodHood.Web.Migrations
                     b.Property<int>("ArticuloId")
                         .HasColumnType("int");
 
+                    b.Property<int?>("ArticuloId1")
+                        .HasColumnType("int");
+
                     b.Property<int>("Cantidad")
                         .HasColumnType("int");
 
                     b.Property<int>("PedidoId")
                         .HasColumnType("int");
 
+                    b.Property<int?>("PedidoId1")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ArticuloId");
 
+                    b.HasIndex("ArticuloId1");
+
                     b.HasIndex("PedidoId");
+
+                    b.HasIndex("PedidoId1");
 
                     b.ToTable("DetallePedidos");
                 });
@@ -268,16 +281,11 @@ namespace TheFoodHood.Web.Migrations
 
                     b.Property<string>("CategoriaNombre")
                         .IsRequired()
-                        .HasMaxLength(60)
-                        .HasColumnType("nvarchar(60)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Descripcion")
                         .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<bool>("Eliminado")
-                        .HasColumnType("bit");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("ImagenUrl")
                         .IsRequired()
@@ -285,11 +293,10 @@ namespace TheFoodHood.Web.Migrations
 
                     b.Property<string>("Nombre")
                         .IsRequired()
-                        .HasMaxLength(120)
-                        .HasColumnType("nvarchar(120)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("Precio")
-                        .HasColumnType("decimal(10,2)");
+                        .HasColumnType("decimal(18,2)");
 
                     b.HasKey("Id");
 
@@ -319,6 +326,9 @@ namespace TheFoodHood.Web.Migrations
                     b.Property<DateTime>("Fecha")
                         .HasColumnType("datetime2");
 
+                    b.Property<decimal>("Precio")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<string>("TipoEntrega")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -340,16 +350,24 @@ namespace TheFoodHood.Web.Migrations
             modelBuilder.Entity("DetallePedido", b =>
                 {
                     b.HasOne("TheFoodHood.Web.Data.Entities.Articulo", "Articulo")
-                        .WithMany("DetallesPedido")
+                        .WithMany()
                         .HasForeignKey("ArticuloId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("TheFoodHood.Web.Data.Entities.Articulo", null)
+                        .WithMany("DetallesPedido")
+                        .HasForeignKey("ArticuloId1");
+
                     b.HasOne("TheFoodHood.Web.Data.Entities.Pedido", "Pedido")
-                        .WithMany("Detalles")
+                        .WithMany()
                         .HasForeignKey("PedidoId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("TheFoodHood.Web.Data.Entities.Pedido", null)
+                        .WithMany("Detalles")
+                        .HasForeignKey("PedidoId1");
 
                     b.Navigation("Articulo");
 
