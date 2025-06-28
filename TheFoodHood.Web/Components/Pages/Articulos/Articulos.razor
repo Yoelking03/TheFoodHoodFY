@@ -31,7 +31,9 @@
                 <form class="logout-form" action="Account/Logout" method="post">
                     <AntiforgeryToken />
                     <input type="hidden" name="ReturnUrl" value="" />
-                    <button type="submit" class="btn-logout">CERRAR SESIÓN</button>
+                    <button type="submit" class="btn-logout">
+                        <i class="fas fa-sign-out-alt"></i> CERRAR SESIÓN
+                    </button>
                 </form>
             }
             else
@@ -61,7 +63,7 @@
     <hr class="divider" />
 
     <!-- ░░ SIN PRODUCTOS ░░ -->
-    @if (productosFiltrados.Count == 0)
+    @if (!productosFiltrados.Any())
     {
         <div class="text-center">
             <h2>No hay artículos disponibles</h2>
@@ -99,7 +101,21 @@
     /* ░░ Campos ░░ */
     private List<ArticulosDtos> productos = new();
     private List<ArticulosDtos> productosFiltrados = new();
-    private string searchTerm = string.Empty;
+
+    // ░░ Barra de búsqueda ░░
+    private string _searchTerm = string.Empty;
+    private string searchTerm   // propiedad con setter que filtra en tiempo real
+    {
+        get => _searchTerm;
+        set
+        {
+            if (_searchTerm == value) return;
+            _searchTerm = value;
+            FiltrarProductos();
+            // StateHasChanged(); // normalmente no hace falta, Blazor re-renderiza solo
+        }
+    }
+
     private string TipoUsuario = "invitado";
     private string UsuarioId = "0";
     private bool IsAuthenticated;
@@ -121,19 +137,19 @@
             UsuarioId = appUser?.Id ?? "0";
         }
 
-        CargarProductos();
+        CargarProductos();   // ← esto ya llama a FiltrarProductos()
     }
 
     /* ░░ Carga + Filtro ░░ */
     private void CargarProductos()
     {
-        productos = ArticuloService.Consultar();   // ← trae solo los NO eliminados
+        productos = ArticuloService.Consultar();  // ← trae solo los NO eliminados
         FiltrarProductos();
     }
 
     private void FiltrarProductos()
     {
-        var term = searchTerm.ToLower();
+        var term = _searchTerm.ToLower();
         productosFiltrados = productos
             .Where(p =>
                 p.Nombre.ToLower().Contains(term) ||
@@ -145,8 +161,7 @@
     private async Task ConfirmarArchivar(int id)
     {
         var ok = await JS.InvokeAsync<bool>("confirm", "¿Archivar este artículo?");
-        if (ok)
-            ArchivarProducto(id);
+        if (ok) ArchivarProducto(id);
     }
 
     private void ArchivarProducto(int id)

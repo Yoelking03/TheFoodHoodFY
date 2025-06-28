@@ -11,7 +11,35 @@
 <PageTitle>Ajustes de Usuario</PageTitle>
 
 <link href="~/css/ajustes.css" rel="stylesheet" />
+<div class="shared-background">
+    <!-- ░░ CABECERA ░░ -->
+    <div class="header-menu">
+        <div class="logo-container">
+            <img src="img/logo.png" alt="logo" class="logo-img" />
+            <span class="logo-text">FoodHood</span>
+        </div>
 
+        <div class="menu-title">Ajustes</div>
+
+        <div class="user-info">
+            @if (IsAuthenticated)
+            {
+                <div class="tipo-usuario">@TipoUsuario</div>
+                <form class="logout-form" action="Account/Logout" method="post">
+                    <AntiforgeryToken />
+                    <input type="hidden" name="ReturnUrl" value="" />
+                    <button type="submit" class="btn-logout">
+                        <i class="fas fa-sign-out-alt"></i> CERRAR SESIÓN
+                    </button>
+                </form>
+            }
+            else
+            {
+                <a href="/Account/Login" class="btn-logout">INICIAR SESIÓN</a>
+            }
+        </div>
+    </div>
+</div>
 <div class="container-fluid">
     <div class="row justify-content-center">
         <div class="col-md-6">
@@ -203,6 +231,10 @@
 </div>
 
 @code {
+
+    private string TipoUsuario = "invitado";
+    private string UsuarioId = "0";
+    private bool IsAuthenticated;
     private ApplicationUser? usuario;
     private bool cargando = false;
     private string mensaje = string.Empty;
@@ -222,12 +254,24 @@
 
     protected override async Task OnInitializedAsync()
     {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        IsAuthenticated = user.Identity?.IsAuthenticated ?? false;
         usuario = await UserManager.GetUserAsync(SignInManager.Context.User);
         if (usuario != null)
         {
             nombre = nombreOriginal = usuario.Nombre ?? string.Empty;
             telefono = telefonoOriginal = usuario.PhoneNumber ?? string.Empty;
             direccion = direccionOriginal = usuario.Direccion ?? string.Empty;
+        }
+        if (IsAuthenticated)
+        {
+            var email = user.Identity?.Name;
+            var appUser = await UserManager.FindByEmailAsync(email);
+
+            TipoUsuario = appUser?.TipoUsuario?.ToLower() ?? "invitado";
+            UsuarioId = appUser?.Id ?? "0";
         }
     }
 
